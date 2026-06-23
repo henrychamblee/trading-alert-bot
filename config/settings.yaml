@@ -1,0 +1,68 @@
+app:
+  name: trading-alert-bot
+  timezone: America/New_York
+  mode: paper_alerts_only
+
+symbols:
+  primary: NQ
+  comparison: ES
+
+sessions:
+  Asia:
+    start: "20:00"
+    end: "00:00"
+  London:
+    start: "02:00"
+    end: "05:00"
+  New York:
+    start: "08:30"
+    end: "11:00"
+  Lunch:
+    start: "11:00"
+    end: "13:30"
+  New York PM:
+    start: "13:30"
+    end: "16:00"
+
+market_structure:
+  swing_lookback: 1
+  smt_swing_lookback: 3
+  manipulation_lookback: 20
+  deviation_levels:
+    - 2.0
+    - 2.5
+    - 3.0
+    - 3.5
+    - 4.0
+    - 4.5
+
+risk:
+  default_contracts: 1
+  max_alerts_per_session: 3
+  max_stop_points:
+    NQ: 15
+    ES: 5
+
+deviations:
+  tolerance_points:
+    NQ: 5
+    ES: 1
+
+momentum:
+  body_shrink_lookback: 3
+  body_shrink_ratio: 0.75
+  rejection_wick_ratio: 1.5
+  failed_continuation_bars: 2
+
+scoring:
+  manipulation_leg: 20
+  price_at_deviation: 25
+  smt_aligned: 25
+  loss_of_momentum: 20
+  target_liquidity_available: 10
+  a_plus_threshold: 85
+
+alerts:
+  console_enabled: true
+  webhook_enabled: false
+  webhook_url: ""
