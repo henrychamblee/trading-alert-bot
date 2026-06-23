@@ -91,6 +91,28 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Review saved signal alerts instead of running a new evaluation.",
     )
+    parser.add_argument(
+        "--replay",
+        action="store_true",
+        help="Replay historical candle data one timestamp at a time.",
+    )
+    parser.add_argument(
+        "--speed",
+        type=float,
+        default=0,
+        help="Seconds to wait between replay timestamps.",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=None,
+        help="Maximum number of replay timestamps to process.",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print every replay state, including NO_SETUP.",
+    )
     return parser.parse_args()
 
 
@@ -98,6 +120,28 @@ def run_review_mode() -> None:
     """Read the signal log and print review statistics."""
     summary = review_signal_log(SIGNAL_LOG_PATH)
     print_review_summary(summary)
+
+
+def run_replay_mode(speed: float = 0, limit: int | None = None, verbose: bool = False) -> None:
+    """Replay sample historical candles and save evaluations."""
+    try:
+        from replay import run_replay
+    except ModuleNotFoundError as error:
+        missing_package = error.name
+        print(
+            f"Missing dependency: {missing_package}. "
+            "Install requirements or activate the project environment, then run again."
+        )
+        sys.exit(1)
+
+    run_replay(
+        SAMPLE_DATA_PATH,
+        SETTINGS_PATH,
+        SIGNAL_LOG_PATH,
+        speed=speed,
+        limit=limit,
+        verbose=verbose,
+    )
 
 
 def run_normal_mode() -> None:
@@ -187,6 +231,9 @@ def main() -> None:
     args = parse_args()
     if args.review:
         run_review_mode()
+        return
+    if args.replay:
+        run_replay_mode(args.speed, args.limit, args.verbose)
         return
 
     run_normal_mode()

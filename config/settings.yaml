@@ -7,6 +7,19 @@ symbols:
   primary: NQ
   comparison: ES
 
+timeframes:
+  htf_bias:
+    - 15m
+    - 1h
+    - 4h
+    - Daily
+  ltf_execution:
+    - 1m
+    - 3m
+    - 5m
+  main_execution: 1m
+  optional_confirmation: 15s
+
 sessions:
   Asia:
     start: "20:00"
