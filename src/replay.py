@@ -113,10 +113,16 @@ def should_print_replay_state(setup_snapshot: dict, verbose: bool = False) -> bo
 
 def print_replay_state(timestamp, setup_snapshot: dict) -> None:
     """Print one meaningful replay state."""
+    entry_refinement = setup_snapshot.get("entry_refinement", {})
     print(
         f"{timestamp} | {setup_snapshot.get('alert_state')} | "
         f"score={setup_snapshot.get('setup_score')} | "
-        f"direction={setup_snapshot.get('suggested_entry_direction')}"
+        f"direction={setup_snapshot.get('suggested_entry_direction')} | "
+        f"OTE={entry_refinement.get('ote_touched')} | "
+        f"sweep={entry_refinement.get('sweep_confirmed')} | "
+        f"displacement={entry_refinement.get('displacement_confirmed')} | "
+        f"FVG={entry_refinement.get('fvg_type')} | "
+        f"reason={setup_snapshot.get('entry_trigger_reason')}"
     )
 
 

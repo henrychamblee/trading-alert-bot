@@ -5,6 +5,7 @@ import pandas as pd
 from alerts import format_alert
 from deviations import calculate_manipulation_deviation_levels, find_nearest_deviation
 from momentum import detect_loss_of_momentum, has_loss_of_momentum
+from ote import build_entry_refinement
 from risk import calculate_stop_loss, calculate_take_profit, has_target_liquidity
 from smt import detect_smt_divergence
 
@@ -86,6 +87,9 @@ def determine_alert_state(
     setup_direction: str | None,
     nearest_deviation: dict,
     momentum_result: dict,
+    smt_result: dict | None = None,
+    entry_refinement: dict | None = None,
+    entry_requires_displacement: bool = False,
     invalidated: bool = False,
     a_plus_threshold: int = 85,
 ) -> str:
@@ -94,13 +98,60 @@ def determine_alert_state(
         return "INVALIDATED"
     if setup_direction is None:
         return "NO_SETUP"
+    smt_result = smt_result or {"detected": True}
+    entry_refinement = entry_refinement or {
+        "ote_touched": True,
+        "sweep_confirmed": True,
+        "displacement_confirmed": True,
+    }
+    core_entry_conditions = (
+        score >= a_plus_threshold
+        and bool(smt_result.get("detected"))
+        and bool(nearest_deviation.get("within_tolerance"))
+        and bool(momentum_result.get("detected"))
+        and (
+            bool(entry_refinement.get("ote_touched"))
+            or bool(entry_refinement.get("sweep_confirmed"))
+        )
+    )
+    displacement_ok = (
+        bool(entry_refinement.get("displacement_confirmed"))
+        if entry_requires_displacement
+        else True
+    )
+    if core_entry_conditions and displacement_ok:
+        return "ENTRY_ALERT"
     if not nearest_deviation.get("within_tolerance") and score < a_plus_threshold:
         return "SETUP_FORMING" if score > 0 else "NO_SETUP"
-    if score >= a_plus_threshold and momentum_result.get("detected"):
-        return "ENTRY_ALERT"
     if score >= a_plus_threshold:
         return "A_PLUS_SETUP"
     return "SETUP_FORMING"
+
+
+def build_entry_trigger_reason(
+    alert_state: str,
+    entry_refinement: dict,
+    entry_requires_displacement: bool = False,
+) -> str:
+    """Explain why the final entry state did or did not trigger."""
+    if alert_state != "ENTRY_ALERT":
+        if entry_requires_displacement and not entry_refinement.get("displacement_confirmed"):
+            return "Waiting for displacement confirmation."
+        if not (
+            entry_refinement.get("ote_touched")
+            or entry_refinement.get("sweep_confirmed")
+        ):
+            return "Waiting for OTE touch or liquidity sweep confirmation."
+        return "Entry conditions not fully aligned."
+
+    reasons = []
+    if entry_refinement.get("ote_touched"):
+        reasons.append("OTE touched")
+    if entry_refinement.get("sweep_confirmed"):
+        reasons.append("liquidity sweep confirmed")
+    if entry_refinement.get("displacement_confirmed"):
+        reasons.append("displacement confirmed")
+    return ", ".join(reasons) if reasons else "Entry conditions aligned."
 
 
 def build_setup_snapshot(
@@ -132,6 +183,12 @@ def build_setup_snapshot(
         setup_direction or "",
         settings.get("momentum", {}),
     )
+    entry_refinement = build_entry_refinement(
+        symbol_candles,
+        manipulation_leg,
+        setup_direction,
+        settings,
+    )
     take_profit = calculate_take_profit(setup_direction or "", symbol_candles)
     scoring = score_setup(
         manipulation_leg,
@@ -160,8 +217,16 @@ def build_setup_snapshot(
         setup_direction,
         nearest_deviation,
         momentum_result,
+        smt_result,
+        entry_refinement,
+        settings.get("entry", {}).get("entry_requires_displacement", False),
         invalidated,
         settings.get("scoring", {}).get("a_plus_threshold", 85),
+    )
+    entry_trigger_reason = build_entry_trigger_reason(
+        alert_state,
+        entry_refinement,
+        settings.get("entry", {}).get("entry_requires_displacement", False),
     )
 
     return {
@@ -171,6 +236,8 @@ def build_setup_snapshot(
         "suggested_entry_direction": setup_direction,
         "nearest_deviation": nearest_deviation,
         "loss_of_momentum": momentum_result,
+        "entry_refinement": entry_refinement,
+        "entry_trigger_reason": entry_trigger_reason,
         "stop_loss": stop_loss,
         "take_profit": take_profit,
         "current_price": current_price,

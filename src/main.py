@@ -37,6 +37,7 @@ def print_market_structure_summary(
     latest = candles.sort_values("timestamp").iloc[-1]
     latest_swings = candles[candles["is_swing_high"] | candles["is_swing_low"]].tail(6)
     nearest_deviation = setup_snapshot.get("nearest_deviation", {})
+    entry_refinement = setup_snapshot.get("entry_refinement", {})
     alert_state = setup_snapshot.get("alert_state", "NO_SETUP")
 
     print("\nPhase 4 Summary")
@@ -63,6 +64,31 @@ def print_market_structure_summary(
     print(f"Setup score: {setup_snapshot.get('setup_score')}")
     print(f"Alert state: {alert_state}")
     print(f"Suggested direction: {setup_snapshot.get('suggested_entry_direction')}")
+    print(
+        "OTE zone: "
+        f"{entry_refinement.get('ote_zone_low')} - "
+        f"{entry_refinement.get('ote_zone_high')}"
+    )
+    print(f"OTE touched: {entry_refinement.get('ote_touched')}")
+    print(
+        "Sweep confirmation: "
+        f"confirmed={entry_refinement.get('sweep_confirmed')}, "
+        f"type={entry_refinement.get('sweep_type')}, "
+        f"level={entry_refinement.get('sweep_level')}"
+    )
+    print(
+        "Displacement confirmation: "
+        f"confirmed={entry_refinement.get('displacement_confirmed')}, "
+        f"timestamp={entry_refinement.get('displacement_timestamp')}"
+    )
+    print(
+        "FVG details: "
+        f"detected={entry_refinement.get('fvg_detected')}, "
+        f"type={entry_refinement.get('fvg_type')}, "
+        f"low={entry_refinement.get('fvg_low')}, "
+        f"high={entry_refinement.get('fvg_high')}"
+    )
+    print(f"Final entry trigger reason: {setup_snapshot.get('entry_trigger_reason')}")
     print(f"Stop loss: {setup_snapshot.get('stop_loss')}")
     print(f"Take profit: {setup_snapshot.get('take_profit')}")
 

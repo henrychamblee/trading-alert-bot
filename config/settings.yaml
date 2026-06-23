@@ -67,6 +67,16 @@ momentum:
   rejection_wick_ratio: 1.5
   failed_continuation_bars: 2
 
+entry:
+  ote_levels:
+    - 0.62
+    - 0.66
+    - 0.705
+    - 0.786
+  displacement_body_multiplier: 1.25
+  displacement_lookback: 3
+  entry_requires_displacement: false
+
 scoring:
   manipulation_leg: 20
   price_at_deviation: 25
