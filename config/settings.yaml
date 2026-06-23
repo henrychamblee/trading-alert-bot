@@ -60,7 +60,7 @@ scoring:
   smt_aligned: 25
   loss_of_momentum: 20
   target_liquidity_available: 10
-  a_plus_threshold: 85
+  a_plus_threshold: 80
 
 alerts:
   console_enabled: true
